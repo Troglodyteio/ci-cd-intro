@@ -4,7 +4,7 @@ name: OIDC Continuous Deployment
 on:
   push:
     branches:
-      - 'main'
+      - 'patch-1'
   workflow_dispatch:
 
 permissions:
