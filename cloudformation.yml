@@ -1,0 +1,908 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+    Generator: "former2"
+Description: ""
+Resources:
+    IAMUser:
+        Type: "AWS::IAM::User"
+        Properties:
+            Path: "/"
+            UserName: "trogi"
+            Tags: 
+              - 
+                Key: "AKIAT3UH3GDQT6AFX4BI"
+                Value: "GitHubAction"
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AdministratorAccess"
+
+    IAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: "GitHubOidc"
+            AssumeRolePolicyDocument: !Sub "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Federated\":\"${IAMOIDCProvider}\"},\"Action\":\"sts:AssumeRoleWithWebIdentity\",\"Condition\":{\"StringEquals\":{\"token.actions.githubusercontent.com:aud\":\"sts.amazonaws.com\"},\"StringLike\":{\"token.actions.githubusercontent.com:sub\":\"repo:Troglodyteio/*\"}}}]}"
+            MaxSessionDuration: 3600
+            PermissionsBoundary: "arn:aws:iam::aws:policy/AdministratorAccess"
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AdministratorAccess"
+            Description: ""
+
+    IAMServiceLinkedRole:
+        Type: "AWS::IAM::ServiceLinkedRole"
+        Properties:
+            AWSServiceName: "organizations.amazonaws.com"
+            Description: "Service-linked role used by AWS Organizations to enable integration of other AWS services with Organizations."
+
+    IAMServiceLinkedRole2:
+        Type: "AWS::IAM::ServiceLinkedRole"
+        Properties:
+            AWSServiceName: "sso.amazonaws.com"
+            Description: "Service-linked role used by AWS SSO to manage AWS resources, including IAM roles, policies and SAML IdP on your behalf."
+
+    IAMAccessKey:
+        Type: "AWS::IAM::AccessKey"
+        Properties:
+            Status: "Active"
+            UserName: "trogi"
+
+    IAMVirtualMFADevice:
+        Type: "AWS::IAM::VirtualMFADevice"
+        Properties:
+            SerialNumber: !Sub "arn:aws:iam::${OrganizationsAccount}:mfa/awsworkspacegooglechrome"
+            Users: 
+              - !Sub "arn:aws:iam::${OrganizationsAccount}:root"
+
+    IAMVirtualMFADevice2:
+        Type: "AWS::IAM::VirtualMFADevice"
+        Properties:
+            SerialNumber: !Sub "arn:aws:iam::${OrganizationsAccount}:mfa/HpLaptopEdge"
+            Users: 
+              - !Sub "arn:aws:iam::${OrganizationsAccount}:root"
+
+    IAMOIDCProvider:
+        Type: "AWS::IAM::OIDCProvider"
+        Properties:
+            Url: "token.actions.githubusercontent.com"
+            ClientIdList: 
+              - "sts.amazonaws.com"
+            ThumbprintList: 
+              - "1b511abead59c6ce207077c0bf0e0043b1382612"
+
+    EC2VPC:
+        Type: "AWS::EC2::VPC"
+        Properties:
+            CidrBlock: "172.31.0.0/16"
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: "default"
+
+    EC2Subnet:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}c"
+            CidrBlock: "172.31.80.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: true
+
+    EC2Subnet2:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}b"
+            CidrBlock: "172.31.0.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: true
+
+    EC2Subnet3:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}d"
+            CidrBlock: "172.31.16.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: true
+
+    EC2Subnet4:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}f"
+            CidrBlock: "172.31.64.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: true
+
+    EC2Subnet5:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}a"
+            CidrBlock: "172.31.32.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: true
+
+    EC2Subnet6:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}e"
+            CidrBlock: "172.31.48.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: true
+
+    EC2InternetGateway:
+        Type: "AWS::EC2::InternetGateway"
+
+    EC2DHCPOptions:
+        Type: "AWS::EC2::DHCPOptions"
+        Properties:
+            DomainName: "ec2.internal"
+
+    EC2VPCDHCPOptionsAssociation:
+        Type: "AWS::EC2::VPCDHCPOptionsAssociation"
+        Properties:
+            DhcpOptionsId: !Ref EC2DHCPOptions
+            VpcId: !Ref EC2VPC
+
+    EC2NetworkAcl:
+        Type: "AWS::EC2::NetworkAcl"
+        Properties:
+            VpcId: !Ref EC2VPC
+
+    EC2NetworkAclEntry:
+        Type: "AWS::EC2::NetworkAclEntry"
+        Properties:
+            CidrBlock: "0.0.0.0/0"
+            Egress: true
+            NetworkAclId: !Ref EC2NetworkAcl
+            Protocol: -1
+            RuleAction: "allow"
+            RuleNumber: 100
+
+    EC2NetworkAclEntry2:
+        Type: "AWS::EC2::NetworkAclEntry"
+        Properties:
+            CidrBlock: "0.0.0.0/0"
+            Egress: false
+            NetworkAclId: !Ref EC2NetworkAcl
+            Protocol: -1
+            RuleAction: "allow"
+            RuleNumber: 100
+
+    EC2RouteTable:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC
+
+    EC2Route:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            GatewayId: !Ref EC2InternetGateway
+            RouteTableId: !Ref EC2RouteTable
+
+    EC2VPCGatewayAttachment:
+        Type: "AWS::EC2::VPCGatewayAttachment"
+        Properties:
+            InternetGatewayId: !Ref EC2InternetGateway
+            VpcId: !Ref EC2VPC
+
+    EC2SubnetNetworkAclAssociation:
+        Type: "AWS::EC2::SubnetNetworkAclAssociation"
+        Properties:
+            SubnetId: !Ref EC2Subnet6
+            NetworkAclId: !Ref EC2NetworkAcl
+
+    EC2SubnetNetworkAclAssociation2:
+        Type: "AWS::EC2::SubnetNetworkAclAssociation"
+        Properties:
+            SubnetId: !Ref EC2Subnet4
+            NetworkAclId: !Ref EC2NetworkAcl
+
+    EC2SubnetNetworkAclAssociation3:
+        Type: "AWS::EC2::SubnetNetworkAclAssociation"
+        Properties:
+            SubnetId: !Ref EC2Subnet5
+            NetworkAclId: !Ref EC2NetworkAcl
+
+    EC2SubnetNetworkAclAssociation4:
+        Type: "AWS::EC2::SubnetNetworkAclAssociation"
+        Properties:
+            SubnetId: !Ref EC2Subnet2
+            NetworkAclId: !Ref EC2NetworkAcl
+
+    EC2SubnetNetworkAclAssociation5:
+        Type: "AWS::EC2::SubnetNetworkAclAssociation"
+        Properties:
+            SubnetId: !Ref EC2Subnet
+            NetworkAclId: !Ref EC2NetworkAcl
+
+    EC2SubnetNetworkAclAssociation6:
+        Type: "AWS::EC2::SubnetNetworkAclAssociation"
+        Properties:
+            SubnetId: !Ref EC2Subnet3
+            NetworkAclId: !Ref EC2NetworkAcl
+
+    EC2SecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "default VPC security group"
+            GroupName: "default"
+            VpcId: !Ref EC2VPC
+            SecurityGroupIngress: 
+              - 
+                SourceSecurityGroupId: "sg-06cb751f42259bdfe"
+                SourceSecurityGroupOwnerId: !Ref OrganizationsAccount
+                IpProtocol: "-1"
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+
+    ElastiCacheUser:
+        Type: "AWS::ElastiCache::User"
+        Properties:
+            UserId: "default"
+            UserName: "default"
+            Engine: "redis"
+            AccessString: "on ~* +@all"
+            NoPasswordRequired: true
+
+    OpsWorksUserProfile:
+        Type: "AWS::OpsWorks::UserProfile"
+        Properties:
+            AllowSelfManagement: false
+            IamUserArn: !Sub "arn:aws:iam::${OrganizationsAccount}:user/trogi"
+            SshUsername: "trogi"
+
+    EKSCluster:
+        Type: "AWS::EKS::Cluster"
+        Properties:
+            Name: "GitLabEks"
+            RoleArn: "arn:aws:iam::127459796026:role/eksTrogio"
+            Version: "1.28"
+            ResourcesVpcConfig: 
+                SecurityGroupIds: 
+                  - "sg-76104d00"
+                SubnetIds: 
+                  - "subnet-6898a535"
+                  - "subnet-48bdae2c"
+            KubernetesNetworkConfig: 
+                ServiceIpv4Cidr: "10.100.0.0/16"
+
+    EKSAddon:
+        Type: "AWS::EKS::Addon"
+        Properties:
+            AddonName: "coredns"
+            AddonVersion: "v1.10.1-eksbuild.2"
+            ClusterName: "GitLabEks"
+
+    EKSAddon2:
+        Type: "AWS::EKS::Addon"
+        Properties:
+            AddonName: "kube-proxy"
+            AddonVersion: "v1.28.1-eksbuild.1"
+            ClusterName: "GitLabEks"
+
+    EKSAddon3:
+        Type: "AWS::EKS::Addon"
+        Properties:
+            AddonName: "vpc-cni"
+            AddonVersion: "v1.14.1-eksbuild.1"
+            ClusterName: "GitLabEks"
+
+    OrganizationsAccount:
+        Type: "AWS::Organizations::Account"
+        Properties:
+            AccountName: "troglodyteio"
+            Email: "administrator@troglodyte.io"
+            ParentIds: 
+              - "r-1ntp"
+
+    OrganizationsAccount2:
+        Type: "AWS::Organizations::Account"
+        Properties:
+            AccountName: "ArmyDrifting"
+            Email: "justin.j.ryberg.ctr@army.mil"
+            ParentIds: 
+              - "r-1ntp"
+
+    XRayGroup:
+        Type: "AWS::XRay::Group"
+        Properties:
+            GroupName: "Default"
+            InsightsConfiguration: 
+                InsightsEnabled: false
+                NotificationsEnabled: false
+
+    CodeGuruReviewerRepositoryAssociation:
+        Type: "AWS::CodeGuruReviewer::RepositoryAssociation"
+        Properties:
+            Name: "PipeLine"
+            Owner: "127459796026"
+            Type: "CodeCommit"
+
+    SSOPermissionSet:
+        Type: "AWS::SSO::PermissionSet"
+        Properties:
+            Name: "ViewOnlyAccess"
+            SessionDuration: "PT1H"
+            InstanceArn: "arn:aws:sso:::instance/ssoins-7223dc9afcc9948e"
+            InlinePolicy: ""
+            ManagedPolicies: 
+              - "arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"
+
+    SSOAssignment:
+        Type: "AWS::SSO::Assignment"
+        Properties:
+            InstanceArn: "arn:aws:sso:::instance/ssoins-7223dc9afcc9948e"
+            PermissionSetArn: !GetAtt SSOPermissionSet.PermissionSetArn
+            PrincipalId: "34e824f8-e0b1-703b-0be6-158aaa0b4715"
+            PrincipalType: "GROUP"
+            TargetId: "127459796026"
+            TargetType: "AWS_ACCOUNT"
+
+    AppRunnerObservabilityConfiguration:
+        Type: "AWS::AppRunner::ObservabilityConfiguration"
+        Properties:
+            ObservabilityConfigurationName: "DefaultConfiguration"
+            TraceConfiguration: 
+                Vendor: "AWSXRAY"
+
+    MemoryDBUser:
+        Type: "AWS::MemoryDB::User"
+        Properties:
+            UserName: "default"
+            AccessString: "on ~* &* +@all"
+            AuthenticationMode: "no-password"
+
+    MemoryDBACL:
+        Type: "AWS::MemoryDB::ACL"
+        Properties:
+            ACLName: "open-access"
+            UserNames: 
+              - "default"
+
+    MemoryDBParameterGroup:
+        Type: "AWS::MemoryDB::ParameterGroup"
+        Properties:
+            Description: "Default parameter group for memorydb_redis6"
+            Family: "memorydb_redis6"
+            Parameters: 
+              - 
+                Name: "acllog-max-len"
+                Value: "128"
+                Description: "The maximum length of the ACL Log"
+                DataType: "integer"
+                AllowedValues: "1-10000"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "activedefrag"
+                Value: "no"
+                Description: "Enabled active memory defragmentation"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "active-defrag-cycle-max"
+                Value: "75"
+                Description: "Maximal effort for defrag in CPU percentage"
+                DataType: "integer"
+                AllowedValues: "1-75"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "active-defrag-cycle-min"
+                Value: "5"
+                Description: "Minimal effort for defrag in CPU percentage"
+                DataType: "integer"
+                AllowedValues: "1-75"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "active-defrag-ignore-bytes"
+                Value: "104857600"
+                Description: "Minimum amount of fragmentation waste to start active defrag"
+                DataType: "integer"
+                AllowedValues: "1048576-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "active-defrag-max-scan-fields"
+                Value: "1000"
+                Description: "Maximum number of set/hash/zset/list fields that will be processed from the main dictionary scan"
+                DataType: "integer"
+                AllowedValues: "1-1000000"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "active-defrag-threshold-lower"
+                Value: "10"
+                Description: "Minimum percentage of fragmentation to start active defrag"
+                DataType: "integer"
+                AllowedValues: "1-100"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "active-defrag-threshold-upper"
+                Value: "100"
+                Description: "Maximum percentage of fragmentation at which we use maximum effort"
+                DataType: "integer"
+                AllowedValues: "1-100"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "active-expire-effort"
+                Value: "1"
+                Description: "The amount of effort that redis uses to expire items in the active expiration job"
+                DataType: "integer"
+                AllowedValues: "1-10"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "activerehashing"
+                Value: "yes"
+                Description: "Apply rehashing or not"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "client-output-buffer-limit-normal-hard-limit"
+                Value: "0"
+                Description: "Normal client output buffer hard limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "client-output-buffer-limit-normal-soft-limit"
+                Value: "0"
+                Description: "Normal client output buffer soft limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "client-output-buffer-limit-normal-soft-seconds"
+                Value: "0"
+                Description: "Normal client output buffer soft limit in seconds"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "client-output-buffer-limit-pubsub-hard-limit"
+                Value: "33554432"
+                Description: "Pubsub client output buffer hard limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "client-output-buffer-limit-pubsub-soft-limit"
+                Value: "8388608"
+                Description: "Pubsub client output buffer soft limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "client-output-buffer-limit-pubsub-soft-seconds"
+                Value: "60"
+                Description: "Pubsub client output buffer soft limit in seconds"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "hash-max-ziplist-entries"
+                Value: "512"
+                Description: "The maximum number of hash entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "hash-max-ziplist-value"
+                Value: "64"
+                Description: "The threshold of biggest hash entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "hll-sparse-max-bytes"
+                Value: "3000"
+                Description: "HyperLogLog sparse representation bytes limit"
+                DataType: "integer"
+                AllowedValues: "1-16000"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "lazyfree-lazy-eviction"
+                Value: "no"
+                Description: "Perform an asynchronous delete on evictions"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "lazyfree-lazy-expire"
+                Value: "no"
+                Description: "Perform an asynchronous delete on expired keys"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "lazyfree-lazy-server-del"
+                Value: "no"
+                Description: "Perform an asynchronous delete on key updates"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "lazyfree-lazy-user-del"
+                Value: "no"
+                Description: "Specifies whether the default behavior of DEL command acts the same as UNLINK"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "lfu-decay-time"
+                Value: "1"
+                Description: "The amount of time in minutes to decrement the key counter for LFU eviction policyd"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "lfu-log-factor"
+                Value: "10"
+                Description: "The log factor for incrementing key counter for LFU eviction policy"
+                DataType: "integer"
+                AllowedValues: "1-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "list-compress-depth"
+                Value: "0"
+                Description: "Number of quicklist ziplist nodes from each side of the list to exclude from compression. The head and tail of the list are always uncompressed for fast push/pop operations"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "maxmemory-policy"
+                Value: "noeviction"
+                Description: "Max memory policy"
+                DataType: "string"
+                AllowedValues: "volatile-lru,allkeys-lru,volatile-lfu,allkeys-lfu,volatile-random,allkeys-random,volatile-ttl,noeviction"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "maxmemory-samples"
+                Value: "3"
+                Description: "Max memory samples"
+                DataType: "integer"
+                AllowedValues: "1-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "notify-keyspace-events"
+                Description: "The keyspace events for Redis to notify Pub/Sub clients about. By default all notifications are disabled"
+                DataType: "string"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "set-max-intset-entries"
+                Value: "512"
+                Description: "The limit in the size of the set in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "slowlog-log-slower-than"
+                Value: "10000"
+                Description: "The execution time, in microseconds, to exceed in order for the command to get logged. Note that a negative number disables the slow log, while a value of zero forces the logging of every command"
+                DataType: "integer"
+                AllowedValues: "-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "slowlog-max-len"
+                Value: "128"
+                Description: "The length of the slow log. There is no limit to this length. Just be aware that it will consume memory. You can reclaim memory used by the slow log with SLOWLOG RESET."
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "stream-node-max-bytes"
+                Value: "4096"
+                Description: "The maximum size of a single node in a stream in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "stream-node-max-entries"
+                Value: "100"
+                Description: "The maximum number of items a single node in a stream can contain"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "tcp-keepalive"
+                Value: "300"
+                Description: "If non-zero, send ACKs every given number of seconds"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "timeout"
+                Value: "0"
+                Description: "Close connection if client is idle for a given number of seconds, or never if 0"
+                DataType: "integer"
+                AllowedValues: "0,20-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "tracking-table-max-keys"
+                Value: "1000000"
+                Description: "The maximum number of keys allowed for the tracking table for client side caching"
+                DataType: "integer"
+                AllowedValues: "1-100000000"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "zset-max-ziplist-entries"
+                Value: "128"
+                Description: "The maximum number of sorted set entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+              - 
+                Name: "zset-max-ziplist-value"
+                Value: "64"
+                Description: "The threshold of biggest sorted set entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "6.2.4"
+
+    MemoryDBParameterGroup2:
+        Type: "AWS::MemoryDB::ParameterGroup"
+        Properties:
+            Description: "Default parameter group for memorydb_redis7"
+            Family: "memorydb_redis7"
+            Parameters: 
+              - 
+                Name: "acllog-max-len"
+                Value: "128"
+                Description: "The maximum length of the ACL Log"
+                DataType: "integer"
+                AllowedValues: "1-10000"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "active-defrag-cycle-max"
+                Value: "75"
+                Description: "Maximal effort for defrag in CPU percentage"
+                DataType: "integer"
+                AllowedValues: "1-75"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "active-defrag-cycle-min"
+                Value: "5"
+                Description: "Minimal effort for defrag in CPU percentage"
+                DataType: "integer"
+                AllowedValues: "1-75"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "active-defrag-ignore-bytes"
+                Value: "104857600"
+                Description: "Minimum amount of fragmentation waste to start active defrag"
+                DataType: "integer"
+                AllowedValues: "1048576-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "active-defrag-max-scan-fields"
+                Value: "1000"
+                Description: "Maximum number of set/hash/zset/list fields that will be processed from the main dictionary scan"
+                DataType: "integer"
+                AllowedValues: "1-1000000"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "active-defrag-threshold-lower"
+                Value: "10"
+                Description: "Minimum percentage of fragmentation to start active defrag"
+                DataType: "integer"
+                AllowedValues: "1-100"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "active-defrag-threshold-upper"
+                Value: "100"
+                Description: "Maximum percentage of fragmentation at which we use maximum effort"
+                DataType: "integer"
+                AllowedValues: "1-100"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "active-expire-effort"
+                Value: "1"
+                Description: "The amount of effort that redis uses to expire items in the active expiration job"
+                DataType: "integer"
+                AllowedValues: "1-10"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "client-output-buffer-limit-normal-hard-limit"
+                Value: "0"
+                Description: "Normal client output buffer hard limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "client-output-buffer-limit-normal-soft-limit"
+                Value: "0"
+                Description: "Normal client output buffer soft limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "client-output-buffer-limit-normal-soft-seconds"
+                Value: "0"
+                Description: "Normal client output buffer soft limit in seconds"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "client-output-buffer-limit-pubsub-hard-limit"
+                Value: "33554432"
+                Description: "Pubsub client output buffer hard limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "client-output-buffer-limit-pubsub-soft-limit"
+                Value: "8388608"
+                Description: "Pubsub client output buffer soft limit in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "client-output-buffer-limit-pubsub-soft-seconds"
+                Value: "60"
+                Description: "Pubsub client output buffer soft limit in seconds"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "hash-max-listpack-entries"
+                Value: "512"
+                Description: "The maximum number of hash entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "hash-max-listpack-value"
+                Value: "64"
+                Description: "The threshold of biggest hash entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "hll-sparse-max-bytes"
+                Value: "3000"
+                Description: "HyperLogLog sparse representation bytes limit"
+                DataType: "integer"
+                AllowedValues: "1-16000"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "latency-tracking"
+                Value: "no"
+                Description: "Track the per command latencies and enable exporting the percentile distribution via the INFO latencystats command and cumulative latency distributions (histograms) via the LATENCY command."
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "lazyfree-lazy-eviction"
+                Value: "no"
+                Description: "Perform an asynchronous delete on evictions"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "lazyfree-lazy-expire"
+                Value: "no"
+                Description: "Perform an asynchronous delete on expired keys"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "lazyfree-lazy-server-del"
+                Value: "no"
+                Description: "Perform an asynchronous delete on key updates"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "lazyfree-lazy-user-del"
+                Value: "no"
+                Description: "Specifies whether the default behavior of DEL command acts the same as UNLINK"
+                DataType: "string"
+                AllowedValues: "yes,no"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "lfu-decay-time"
+                Value: "1"
+                Description: "The amount of time in minutes to decrement the key counter for LFU eviction policyd"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "lfu-log-factor"
+                Value: "10"
+                Description: "The log factor for incrementing key counter for LFU eviction policy"
+                DataType: "integer"
+                AllowedValues: "1-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "list-compress-depth"
+                Value: "0"
+                Description: "Number of quicklist ziplist nodes from each side of the list to exclude from compression. The head and tail of the list are always uncompressed for fast push/pop operations"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "maxmemory-policy"
+                Value: "noeviction"
+                Description: "Max memory policy"
+                DataType: "string"
+                AllowedValues: "volatile-lru,allkeys-lru,volatile-lfu,allkeys-lfu,volatile-random,allkeys-random,volatile-ttl,noeviction"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "maxmemory-samples"
+                Value: "3"
+                Description: "Max memory samples"
+                DataType: "integer"
+                AllowedValues: "1-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "notify-keyspace-events"
+                Description: "The keyspace events for Redis to notify Pub/Sub clients about. By default all notifications are disabled"
+                DataType: "string"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "set-max-intset-entries"
+                Value: "512"
+                Description: "The limit in the size of the set in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "slowlog-log-slower-than"
+                Value: "10000"
+                Description: "The execution time, in microseconds, to exceed in order for the command to get logged. Note that a negative number disables the slow log, while a value of zero forces the logging of every command"
+                DataType: "integer"
+                AllowedValues: "-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "slowlog-max-len"
+                Value: "128"
+                Description: "The length of the slow log. There is no limit to this length. Just be aware that it will consume memory. You can reclaim memory used by the slow log with SLOWLOG RESET."
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "stream-node-max-bytes"
+                Value: "4096"
+                Description: "The maximum size of a single node in a stream in bytes"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "stream-node-max-entries"
+                Value: "100"
+                Description: "The maximum number of items a single node in a stream can contain"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "tcp-keepalive"
+                Value: "300"
+                Description: "If non-zero, send ACKs every given number of seconds"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "timeout"
+                Value: "0"
+                Description: "Close connection if client is idle for a given number of seconds, or never if 0"
+                DataType: "integer"
+                AllowedValues: "0,20-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "tracking-table-max-keys"
+                Value: "1000000"
+                Description: "The maximum number of keys allowed for the tracking table for client side caching"
+                DataType: "integer"
+                AllowedValues: "1-100000000"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "zset-max-listpack-entries"
+                Value: "128"
+                Description: "The maximum number of sorted set entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+              - 
+                Name: "zset-max-listpack-value"
+                Value: "64"
+                Description: "The threshold of biggest sorted set entries in order for the dataset to be compressed"
+                DataType: "integer"
+                AllowedValues: "0-"
+                MinimumEngineVersion: "7.0.5"
+
