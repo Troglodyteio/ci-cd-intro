@@ -19,6 +19,17 @@ Resources:
         Type: "AWS::IAM::Role"
         Properties:
             Path: "/"
+            RoleName: "GitHubEks"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"eks.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+            Description: "Allows access to other AWS service resources that are required to operate clusters managed by EKS."
+
+    IAMRole2:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
             RoleName: "GitHubOidc"
             AssumeRolePolicyDocument: !Sub "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Federated\":\"${IAMOIDCProvider}\"},\"Action\":\"sts:AssumeRoleWithWebIdentity\",\"Condition\":{\"StringEquals\":{\"token.actions.githubusercontent.com:aud\":\"sts.amazonaws.com\"},\"StringLike\":{\"token.actions.githubusercontent.com:sub\":\"repo:Troglodyteio/*\"}}}]}"
             MaxSessionDuration: 3600
@@ -30,10 +41,16 @@ Resources:
     IAMServiceLinkedRole:
         Type: "AWS::IAM::ServiceLinkedRole"
         Properties:
+            AWSServiceName: "eks.amazonaws.com"
+            Description: "Allows Amazon EKS to call AWS services on your behalf."
+
+    IAMServiceLinkedRole2:
+        Type: "AWS::IAM::ServiceLinkedRole"
+        Properties:
             AWSServiceName: "organizations.amazonaws.com"
             Description: "Service-linked role used by AWS Organizations to enable integration of other AWS services with Organizations."
 
-    IAMServiceLinkedRole2:
+    IAMServiceLinkedRole3:
         Type: "AWS::IAM::ServiceLinkedRole"
         Properties:
             AWSServiceName: "sso.amazonaws.com"
@@ -249,42 +266,6 @@ Resources:
             IamUserArn: !Sub "arn:aws:iam::${OrganizationsAccount}:user/trogi"
             SshUsername: "trogi"
 
-    EKSCluster:
-        Type: "AWS::EKS::Cluster"
-        Properties:
-            Name: "GitLabEks"
-            RoleArn: "arn:aws:iam::127459796026:role/eksTrogio"
-            Version: "1.28"
-            ResourcesVpcConfig: 
-                SecurityGroupIds: 
-                  - "sg-76104d00"
-                SubnetIds: 
-                  - "subnet-6898a535"
-                  - "subnet-48bdae2c"
-            KubernetesNetworkConfig: 
-                ServiceIpv4Cidr: "10.100.0.0/16"
-
-    EKSAddon:
-        Type: "AWS::EKS::Addon"
-        Properties:
-            AddonName: "coredns"
-            AddonVersion: "v1.10.1-eksbuild.2"
-            ClusterName: "GitLabEks"
-
-    EKSAddon2:
-        Type: "AWS::EKS::Addon"
-        Properties:
-            AddonName: "kube-proxy"
-            AddonVersion: "v1.28.1-eksbuild.1"
-            ClusterName: "GitLabEks"
-
-    EKSAddon3:
-        Type: "AWS::EKS::Addon"
-        Properties:
-            AddonName: "vpc-cni"
-            AddonVersion: "v1.14.1-eksbuild.1"
-            ClusterName: "GitLabEks"
-
     OrganizationsAccount:
         Type: "AWS::Organizations::Account"
         Properties:
@@ -308,13 +289,6 @@ Resources:
             InsightsConfiguration: 
                 InsightsEnabled: false
                 NotificationsEnabled: false
-
-    CodeGuruReviewerRepositoryAssociation:
-        Type: "AWS::CodeGuruReviewer::RepositoryAssociation"
-        Properties:
-            Name: "PipeLine"
-            Owner: "127459796026"
-            Type: "CodeCommit"
 
     SSOPermissionSet:
         Type: "AWS::SSO::PermissionSet"
